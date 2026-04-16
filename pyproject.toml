@@ -1,0 +1,19 @@
+[project]
+name = "vitor"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "23Edu4rd0",email = "eduardo.vchaves23@gmail.com"}
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard] (>=0.135.3,<0.136.0)",
+    "sqlalchemy (>=2.0.49,<3.0.0)",
+    "alembic (>=1.18.4,<2.0.0)",
+    "aiosqlite (>=0.22.1,<0.23.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
