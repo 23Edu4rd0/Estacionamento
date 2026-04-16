@@ -1,33 +1,66 @@
-.idea
-.ipynb_checkpoints
-.mypy_cache
-.vscode
-__pycache__
-.pytest_cache
-htmlcov
-dist
-site
-.coverage*
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env3.*/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor settings
+.idea/
+.vscode/
+
+# Test and coverage artifacts
+.coverage
+.coverage.*
 coverage.xml
-.netlify
+htmlcov/
+
+# Build and packaging outputs
+dist/
+build/
+site/
+docs_build/
+site_build/
+pip-wheel-metadata/
+*.egg-info/
+
+# Database and runtime files
+*.db
+*.sqlite3
 test.db
 log.txt
-Pipfile.lock
-env3.*
-env
-.env
-docs_build
-site_build
-venv
+
+# Archives and generated files
 docs.zip
 archive.zip
+*.zip
 
-# vim temporary files
+# Tool-specific caches
+.netlify/
+.codspeed/
+.tox/
+.nox/
+
+# Lock files, uncomment if you do not want to version them
+# Pipfile.lock
+# poetry.lock
+
+# Vim temporary files
 *~
 .*.sw?
-.cache
-
-# macOS
-.DS_Store
-
-.codspeed
