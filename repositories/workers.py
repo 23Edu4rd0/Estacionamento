@@ -2,7 +2,7 @@ from models.workers import Worker as WorkerModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from collections.abc import Sequence
-from core.exceptions import WorkerNotFound, DuplicateWorker
+from core.exceptions import NotFound, Duplicate
 
 
 async def get_all_workers(session : AsyncSession) -> Sequence[WorkerModel]:
@@ -21,7 +21,7 @@ async def create_worker(session : AsyncSession, worker) -> WorkerModel | None:
     )
 
     if verify_duplicate:
-        raise DuplicateWorker()
+        raise Duplicate()
     
     new_worker = WorkerModel(
         name=worker.name,
@@ -41,7 +41,7 @@ async def update_worker(session: AsyncSession, worker_id: int, worker_data) -> W
     target_worker = await session.get(WorkerModel, worker_id)
 
     if not target_worker:
-        raise WorkerNotFound()
+        raise NotFound()
     
     update_fiels = worker_data.model_dump(exclude_unset=True)
 
@@ -54,7 +54,7 @@ async def update_worker(session: AsyncSession, worker_id: int, worker_data) -> W
         )
 
         if verify_duplicate:
-            raise DuplicateWorker()
+            raise Duplicate()
         
     for key, value in update_fiels.items():
         setattr(target_worker, key, value)
@@ -71,7 +71,7 @@ async def delete_worker(session: AsyncSession, worker_id: int) -> None:
     target_worker = await session.get(WorkerModel, worker_id)
 
     if not target_worker:
-        raise WorkerNotFound()
+        raise NotFound()
     
     await session.delete(target_worker)
     await session.commit()

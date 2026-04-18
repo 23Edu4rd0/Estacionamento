@@ -12,7 +12,7 @@ from repositories.workers import (
     update_worker as update_worker_repo,
     delete_worker as delete_worker_repo
 ) 
-from core.exceptions import WorkerNotFound, DuplicateWorker
+from core.exceptions import NotFound, Duplicate
 
 
 router = APIRouter(tags=['Workers'])
@@ -43,7 +43,7 @@ async def create_worker(
         
         return new_worker
     
-    except DuplicateWorker:
+    except Duplicate:
         raise HTTPException(
             status_code= HTTPStatus.CONFLICT,
             detail= 'A worker with the same phone number already exists.'
@@ -71,12 +71,12 @@ async def update_worker(
         return updated_worker
     
 
-    except WorkerNotFound:
+    except NotFound:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Worker not found.'
         )
-    except DuplicateWorker:
+    except Duplicate:
         raise HTTPException(
             status_code= HTTPStatus.CONFLICT,
             detail= 'A worker with the same phone number already exists.'
@@ -97,7 +97,7 @@ async def delete_worker(
             session=session, 
             worker_id=worker_id
         )
-    except WorkerNotFound:
+    except NotFound:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail='Worker not found.'

@@ -1,4 +1,4 @@
 
-class WorkerNotFound(Exception): pass
-class DuplicateWorker(Exception) : pass
+class NotFound(Exception): pass
+class Duplicate(Exception) : pass
 class NotAuthorized(Exception): pass

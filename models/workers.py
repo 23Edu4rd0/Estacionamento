@@ -1,8 +1,7 @@
+
 from datetime import datetime
-from sqlalchemy import String, func
-from sqlalchemy.orm import mapped_column, Mapped
-
-
+from sqlalchemy import String,func
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 from models.base import Base
 
 class Worker(Base):
@@ -16,3 +15,4 @@ class Worker(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
+    designations: Mapped[list['Designation']] = relationship('Designation', back_populates='worker')
