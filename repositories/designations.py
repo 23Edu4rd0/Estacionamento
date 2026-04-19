@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from datetime import date
 from models.designations import Designation as DesignationModel
 from models.workers import Worker as WorkerModel
 from core.exceptions import Duplicate, NotFound
@@ -51,3 +52,26 @@ async def create_designation_repo(session: AsyncSession, designation):
     await session.refresh(new_designation)
 
     return new_designation
+
+async def edit_designation_repo(session: AsyncSession, designation_id: int, updated_data):
+    designation = await session.get(DesignationModel, designation_id)
+
+    if not designation:
+        raise NotFound()
+
+    for key, value in updated_data.dict(exclude_unset=True).items():
+        setattr(designation, key, value)
+
+    await session.commit()
+    await session.refresh(designation)
+
+    return designation
+
+async def delete_designation_repo(session: AsyncSession, designation_id: int):
+    designation = await session.get(DesignationModel, designation_id)
+
+    if not designation:
+        raise NotFound()
+
+    await session.delete(designation)
+    await session.commit()
