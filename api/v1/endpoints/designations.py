@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from core.exceptions import Duplicate, NotFound
 from repositories.designations import create_designation_repo, get_all_designations
-from schemas.designations import DesignationBase, DesignationResponse
+from api.schemas.designations import DesignationBase, DesignationResponse
 
 router = APIRouter(tags=["Designations"])
 
@@ -14,7 +15,7 @@ router = APIRouter(tags=["Designations"])
 @router.get(
     "/designations", status_code=HTTPStatus.OK, response_model=list[DesignationResponse]
 )
-async def get_designations(session: AsyncSession = Depends(get_db)):
+async def get_designations(session: Annotated[AsyncSession, Depends(get_db)]):
     try:
         return await get_all_designations(session)
 
@@ -28,7 +29,7 @@ async def get_designations(session: AsyncSession = Depends(get_db)):
     response_model=DesignationResponse,
 )
 async def get_designations_by_date(
-    designation_date: str, session: AsyncSession = Depends(get_db)
+    designation_date: str, session: Annotated[AsyncSession, Depends(get_db)]
 ):
     return {"message": f"In development / test {designation_date}"}
 
@@ -37,7 +38,7 @@ async def get_designations_by_date(
     "/designations", status_code=HTTPStatus.CREATED, response_model=DesignationBase
 )
 async def create_designation(
-    designation: DesignationBase, session: AsyncSession = Depends(get_db)
+    designation: DesignationBase, session: Annotated[AsyncSession, Depends(get_db)]
 ):
     try:
         return await create_designation_repo(session, designation)

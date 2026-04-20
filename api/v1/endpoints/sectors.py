@@ -18,7 +18,7 @@ from repositories.sectors import (
 from repositories.sectors import (
     get_all_sectors as get_all_sectors_repo,
 )
-from schemas.sector import Sector as SectorSchema
+from api.schemas.sector import Sector as SectorSchema
 
 router = APIRouter(tags=["Sectors"])
 

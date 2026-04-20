@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,19 +18,19 @@ from repositories.workers import (
 from repositories.workers import (
     update_worker as update_worker_repo,
 )
-from schemas.workers import AllWorkerSchema, WorkerSchema
+from api.schemas.workers import AllWorkerSchema, WorkerSchema
 
 router = APIRouter(tags=["Workers"])
 
 
 @router.get("/workers", status_code=HTTPStatus.OK, response_model=list[AllWorkerSchema])
-async def get_workers(session: AsyncSession = Depends(get_db)):
+async def get_workers(session: Annotated[AsyncSession, Depends(get_db)]):
     return await get_all_workers_repo(session)
 
 
 @router.post("/workers", status_code=HTTPStatus.CREATED, response_model=WorkerSchema)
 async def create_worker(
-    user_data: WorkerSchema, session: AsyncSession = Depends(get_db)
+    user_data: WorkerSchema, session: Annotated[AsyncSession, Depends(get_db)]
 ):
     try:
         new_worker = await create_worker_repo(session, user_data)
@@ -47,7 +48,7 @@ async def create_worker(
     "/workers/{worker_id}", status_code=HTTPStatus.OK, response_model=WorkerSchema
 )
 async def update_worker(
-    worker_id: int, worker: WorkerSchema, session: AsyncSession = Depends(get_db)
+    worker_id: int, worker: WorkerSchema, session: Annotated[AsyncSession, Depends(get_db)]
 ):
     try:
         updated_worker = await update_worker_repo(
@@ -70,7 +71,7 @@ async def update_worker(
 
 
 @router.delete("/workers/{worker_id}", status_code=HTTPStatus.NO_CONTENT)
-async def delete_worker(worker_id: int, session: AsyncSession = Depends(get_db)):
+async def delete_worker(worker_id: int, session: Annotated[AsyncSession, Depends(get_db)]):
     try:
         await delete_worker_repo(session=session, worker_id=worker_id)
     except NotFound:
