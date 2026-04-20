@@ -5,7 +5,7 @@ description = ""
 authors = [
     {name = "23Edu4rd0",email = "eduardo.vchaves23@gmail.com"}
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.14,<4.0"
 dependencies = [
     "fastapi[standard] (>=0.135.3,<0.136.0)",
     "sqlalchemy (>=2.0.49,<3.0.0)",
@@ -17,3 +17,20 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.15.11,<0.16.0)",
+    "taskipy (>=1.14.1,<2.0.0)"
+]
+
+
+[tool.taskipy.tasks]
+lint = 'ruff check .'
+format = 'ruff format .'
+pos_format = 'ruff check . --fix'
+
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT', 'FAST']

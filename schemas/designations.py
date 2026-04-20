@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from datetime import date, time
+
+from pydantic import BaseModel
 
 
 class DesignationBase(BaseModel):
@@ -9,6 +10,7 @@ class DesignationBase(BaseModel):
     shift_end: time
     sector: str
 
+
 class DesignationResponse(BaseModel):
     id: int
     event_date: date
@@ -16,4 +18,3 @@ class DesignationResponse(BaseModel):
     shift_start: time
     shift_end: time
     sector: str
-

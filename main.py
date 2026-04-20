@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
+from routers.designations import router as designations_router
 from routers.rooter import router
 from routers.workers import router as workers_router
-from routers.designations import router as designations_router
 
 app = FastAPI()
 

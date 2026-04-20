@@ -1,29 +1,20 @@
 from http import HTTPStatus
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from repositories.designations import (
-    get_all_designations,
-    create_designation_repo
-)
-from schemas.designations import (
-    DesignationBase,
-    DesignationResponse
-) 
-from core.exceptions import NotFound, Duplicate
+from core.exceptions import Duplicate, NotFound
+from repositories.designations import create_designation_repo, get_all_designations
+from schemas.designations import DesignationBase, DesignationResponse
 
-router = APIRouter(tags=['Designations'])
+router = APIRouter(tags=["Designations"])
 
 
 @router.get(
-        '/designations',
-        status_code=HTTPStatus.OK,
-        response_model= list[DesignationResponse]
+    "/designations", status_code=HTTPStatus.OK, response_model=list[DesignationResponse]
 )
-async def get_designations(
-    session : AsyncSession = Depends(get_db)
-):
+async def get_designations(session: AsyncSession = Depends(get_db)):
     try:
         return await get_all_designations(session)
 
@@ -32,35 +23,31 @@ async def get_designations(
 
 
 @router.get(
-        '/designations/{designation_date}',
-        status_code=HTTPStatus.OK,
-        response_model= DesignationResponse
+    "/designations/{designation_date}",
+    status_code=HTTPStatus.OK,
+    response_model=DesignationResponse,
 )
 async def get_designations_by_date(
-    designation_date: str,
-    session : AsyncSession = Depends(get_db)
+    designation_date: str, session: AsyncSession = Depends(get_db)
 ):
-    return {'message': f'In development / test {designation_date}'}
+    return {"message": f"In development / test {designation_date}"}
+
 
 @router.post(
-    '/designations',
-    status_code= HTTPStatus.CREATED,
-    response_model =  DesignationBase
+    "/designations", status_code=HTTPStatus.CREATED, response_model=DesignationBase
 )
 async def create_designation(
-    designation : DesignationBase,
-    session : AsyncSession = Depends(get_db)
+    designation: DesignationBase, session: AsyncSession = Depends(get_db)
 ):
     try:
         return await create_designation_repo(session, designation)
 
     except NotFound:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Worker not found.'
+            status_code=HTTPStatus.NOT_FOUND, detail="Worker not found."
         )
     except Duplicate:
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
-            detail='This worker is already designated for the specified shift and date.'
+            detail="This worker is already designated for the specified shift and date.",
         )
