@@ -48,7 +48,9 @@ async def create_worker(
     "/workers/{worker_id}", status_code=HTTPStatus.OK, response_model=WorkerSchema
 )
 async def update_worker(
-    worker_id: int, worker: WorkerSchema, session: Annotated[AsyncSession, Depends(get_db)]
+    worker_id: int,
+    worker: WorkerSchema,
+    session: Annotated[AsyncSession, Depends(get_db)],
 ):
     try:
         updated_worker = await update_worker_repo(
@@ -71,7 +73,9 @@ async def update_worker(
 
 
 @router.delete("/workers/{worker_id}", status_code=HTTPStatus.NO_CONTENT)
-async def delete_worker(worker_id: int, session: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_worker(
+    worker_id: int, session: Annotated[AsyncSession, Depends(get_db)]
+):
     try:
         await delete_worker_repo(session=session, worker_id=worker_id)
     except NotFound:

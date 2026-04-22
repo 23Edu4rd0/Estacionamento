@@ -24,9 +24,7 @@ router = APIRouter(tags=["Sectors"])
 
 
 @router.get("/sectors", status_code=HTTPStatus.OK, response_model=list[SectorSchema])
-async def read_sectors(
-    session: Annotated[AsyncSession, Depends(get_db)]
-):
+async def read_sectors(session: Annotated[AsyncSession, Depends(get_db)]):
     return await get_all_sectors_repo(session)
 
 
@@ -46,9 +44,13 @@ async def create_sector(
         )
 
 
-@router.patch("/sectors/{sector_id}", status_code=HTTPStatus.OK, response_model=SectorSchema)
+@router.patch(
+    "/sectors/{sector_id}", status_code=HTTPStatus.OK, response_model=SectorSchema
+)
 async def update_sector(
-    sector_id: int, updated_data: SectorSchema, session: Annotated[AsyncSession, Depends(get_db)]
+    sector_id: int,
+    updated_data: SectorSchema,
+    session: Annotated[AsyncSession, Depends(get_db)],
 ):
     try:
         updated_sector = await edit_sector_repo(session, sector_id, updated_data)

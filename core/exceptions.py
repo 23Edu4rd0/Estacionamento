@@ -8,3 +8,11 @@ class Duplicate(Exception):
 
 class NotAuthorized(Exception):
     pass
+
+
+class AuthenticationError(Exception):
+    pass
+
+
+class TokenError(Exception):
+    pass
