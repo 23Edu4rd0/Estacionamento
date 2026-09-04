@@ -42,7 +42,7 @@ async def authenticate_user(
     session: AsyncSession, email: str, password: str
 ) -> UserModel | None:
 
-    user = await session.scalar(UserModel.select().where(UserModel.email == email))
+    user = await session.scalar(select(UserModel).where(UserModel.email == email))
 
     if not user:
         return None

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.exceptions import Duplicate, NotFound
+from core.security import require_current_user
 from repositories.sectors import (
     create_sector as create_sector_repo,
 )
@@ -28,7 +29,12 @@ async def read_sectors(session: Annotated[AsyncSession, Depends(get_db)]):
     return await get_all_sectors_repo(session)
 
 
-@router.post("/sectors", status_code=HTTPStatus.CREATED, response_model=SectorSchema)
+@router.post(
+    "/sectors",
+    status_code=HTTPStatus.CREATED,
+    response_model=SectorSchema,
+    dependencies=[Depends(require_current_user)],
+)
 async def create_sector(
     sector: SectorSchema, session: Annotated[AsyncSession, Depends(get_db)]
 ):
@@ -45,7 +51,10 @@ async def create_sector(
 
 
 @router.patch(
-    "/sectors/{sector_id}", status_code=HTTPStatus.OK, response_model=SectorSchema
+    "/sectors/{sector_id}",
+    status_code=HTTPStatus.OK,
+    response_model=SectorSchema,
+    dependencies=[Depends(require_current_user)],
 )
 async def update_sector(
     sector_id: int,
@@ -70,7 +79,11 @@ async def update_sector(
         )
 
 
-@router.delete("/sectors/{sector_id}", status_code=HTTPStatus.NO_CONTENT)
+@router.delete(
+    "/sectors/{sector_id}",
+    status_code=HTTPStatus.NO_CONTENT,
+    dependencies=[Depends(require_current_user)],
+)
 async def delete_sector(
     sector_id: int, session: Annotated[AsyncSession, Depends(get_db)]
 ):
