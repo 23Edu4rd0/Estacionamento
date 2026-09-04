@@ -7,8 +7,7 @@ const state = {
   sectors: [],
 };
 
-const loginScreen = document.getElementById("login-screen");
-const appScreen = document.getElementById("app-screen");
+const isAdmin = () => Boolean(state.token);
 
 async function api(path, options = {}) {
   const headers = options.headers ? { ...options.headers } : {};
@@ -20,8 +19,13 @@ async function api(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (response.status === 401) {
-    logout();
-    throw new Error("Sessão expirada. Faça login novamente.");
+    const wasAdmin = isAdmin();
+    clearSession();
+    throw new Error(
+      wasAdmin
+        ? "Sessão de administrador expirada. Entre novamente."
+        : "É preciso estar logado como administrador para fazer isso."
+    );
   }
 
   if (!response.ok) {
@@ -43,13 +47,30 @@ function showMsg(el, text, type) {
   el.className = `msg ${type}`;
 }
 
-function logout() {
+function clearSession() {
   state.token = null;
   state.userEmail = "";
   localStorage.removeItem("token");
   localStorage.removeItem("userEmail");
-  appScreen.hidden = true;
-  loginScreen.hidden = false;
+  applyAdminVisibility();
+}
+
+function applyAdminVisibility() {
+  const admin = isAdmin();
+
+  document.getElementById("admin-badge").hidden = !admin;
+  document.getElementById("admin-toggle-btn").hidden = admin;
+  document.getElementById("logout-btn").hidden = !admin;
+
+  document.querySelectorAll(".admin-only").forEach((el) => {
+    el.hidden = !admin;
+  });
+  document.querySelectorAll(".admin-only-col").forEach((el) => {
+    el.hidden = !admin;
+  });
+
+  renderWorkers();
+  renderSectors();
 }
 
 async function login(email, password) {
@@ -74,6 +95,17 @@ async function login(email, password) {
   localStorage.setItem("userEmail", email);
 }
 
+function openAdminModal() {
+  document.getElementById("admin-modal").hidden = false;
+  document.getElementById("login-error").hidden = true;
+  document.getElementById("login-email").focus();
+}
+
+function closeAdminModal() {
+  document.getElementById("admin-modal").hidden = true;
+  document.getElementById("login-form").reset();
+}
+
 function switchTab(tabName) {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tabName);
@@ -83,9 +115,13 @@ function switchTab(tabName) {
   });
 }
 
-async function loadWorkers() {
-  state.workers = await api("/workers");
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
 
+function renderWorkers() {
   const select = document.getElementById("worker-select");
   select.innerHTML = '<option value="" disabled selected>Selecione um trabalhador</option>';
   state.workers.forEach((worker) => {
@@ -103,15 +139,15 @@ async function loadWorkers() {
       <td>${escapeHtml(worker.name)}</td>
       <td>${escapeHtml(worker.phone_number || "")}</td>
       <td>${escapeHtml(worker.congregation)}</td>
-      <td><button class="btn-danger" data-delete-worker="${worker.id}">Remover</button></td>
+      <td>${isAdmin() ? `<button class="btn-danger" data-delete-worker="${worker.id}">Remover</button>` : ""}</td>
     `;
     body.appendChild(row);
   });
+
+  document.getElementById("workers-empty").hidden = state.workers.length > 0;
 }
 
-async function loadSectors() {
-  state.sectors = await api("/sectors");
-
+function renderSectors() {
   const select = document.getElementById("sector-select");
   select.innerHTML = '<option value="">Sem setor</option>';
   state.sectors.forEach((sector) => {
@@ -127,10 +163,22 @@ async function loadSectors() {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${escapeHtml(sector.sector)}</td>
-      <td><button class="btn-danger" data-delete-sector="${sector.id}">Remover</button></td>
+      <td>${isAdmin() ? `<button class="btn-danger" data-delete-sector="${sector.id}">Remover</button>` : ""}</td>
     `;
     body.appendChild(row);
   });
+
+  document.getElementById("sectors-empty").hidden = state.sectors.length > 0;
+}
+
+async function loadWorkers() {
+  state.workers = await api("/workers");
+  renderWorkers();
+}
+
+async function loadSectors() {
+  state.sectors = await api("/sectors");
+  renderSectors();
 }
 
 async function loadDesignations() {
@@ -150,22 +198,29 @@ async function loadDesignations() {
     `;
     body.appendChild(row);
   });
+
+  document.getElementById("designations-empty").hidden = designations.length > 0;
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (c) => (
-    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-  ));
+async function init() {
+  applyAdminVisibility();
+  try {
+    await Promise.all([loadWorkers(), loadSectors()]);
+    await loadDesignations();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-async function initApp() {
-  document.getElementById("user-email").textContent = state.userEmail;
-  loginScreen.hidden = true;
-  appScreen.hidden = false;
+document.getElementById("admin-toggle-btn").addEventListener("click", openAdminModal);
+document.getElementById("modal-cancel-btn").addEventListener("click", closeAdminModal);
+document.getElementById("admin-modal").addEventListener("click", (e) => {
+  if (e.target.id === "admin-modal") closeAdminModal();
+});
 
-  await Promise.all([loadWorkers(), loadSectors()]);
-  await loadDesignations();
-}
+document.getElementById("logout-btn").addEventListener("click", () => {
+  clearSession();
+});
 
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -176,13 +231,12 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
   try {
     await login(email, password);
-    await initApp();
+    closeAdminModal();
+    applyAdminVisibility();
   } catch (err) {
     showMsg(errorEl, err.message, "error");
   }
 });
-
-document.getElementById("logout-btn").addEventListener("click", logout);
 
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
@@ -212,6 +266,7 @@ document.getElementById("designation-form").addEventListener("submit", async (e)
     await loadDesignations();
   } catch (err) {
     showMsg(msgEl, err.message, "error");
+    applyAdminVisibility();
   }
 });
 
@@ -231,6 +286,7 @@ document.getElementById("worker-form").addEventListener("submit", async (e) => {
     await loadWorkers();
   } catch (err) {
     showMsg(msgEl, err.message, "error");
+    applyAdminVisibility();
   }
 });
 
@@ -244,6 +300,7 @@ document.getElementById("workers-body").addEventListener("click", async (e) => {
     await loadWorkers();
   } catch (err) {
     alert(err.message);
+    applyAdminVisibility();
   }
 });
 
@@ -259,6 +316,7 @@ document.getElementById("sector-form").addEventListener("submit", async (e) => {
     await loadSectors();
   } catch (err) {
     showMsg(msgEl, err.message, "error");
+    applyAdminVisibility();
   }
 });
 
@@ -272,9 +330,8 @@ document.getElementById("sectors-body").addEventListener("click", async (e) => {
     await loadSectors();
   } catch (err) {
     alert(err.message);
+    applyAdminVisibility();
   }
 });
 
-if (state.token) {
-  initApp().catch(() => logout());
-}
+init();

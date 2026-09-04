@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.exceptions import Duplicate, NotFound
+from core.security import require_current_user
 from repositories.workers import (
     create_worker as create_worker_repo,
 )
@@ -28,7 +29,12 @@ async def get_workers(session: Annotated[AsyncSession, Depends(get_db)]):
     return await get_all_workers_repo(session)
 
 
-@router.post("/workers", status_code=HTTPStatus.CREATED, response_model=WorkerSchema)
+@router.post(
+    "/workers",
+    status_code=HTTPStatus.CREATED,
+    response_model=WorkerSchema,
+    dependencies=[Depends(require_current_user)],
+)
 async def create_worker(
     user_data: WorkerSchema, session: Annotated[AsyncSession, Depends(get_db)]
 ):
@@ -45,7 +51,10 @@ async def create_worker(
 
 
 @router.patch(
-    "/workers/{worker_id}", status_code=HTTPStatus.OK, response_model=WorkerSchema
+    "/workers/{worker_id}",
+    status_code=HTTPStatus.OK,
+    response_model=WorkerSchema,
+    dependencies=[Depends(require_current_user)],
 )
 async def update_worker(
     worker_id: int,
@@ -72,7 +81,11 @@ async def update_worker(
         )
 
 
-@router.delete("/workers/{worker_id}", status_code=HTTPStatus.NO_CONTENT)
+@router.delete(
+    "/workers/{worker_id}",
+    status_code=HTTPStatus.NO_CONTENT,
+    dependencies=[Depends(require_current_user)],
+)
 async def delete_worker(
     worker_id: int, session: Annotated[AsyncSession, Depends(get_db)]
 ):

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.exceptions import Duplicate, NotFound
+from core.security import require_current_user
 from repositories.designations import create_designation_repo, get_all_designations
 from api.schemas.designations import DesignationBase, DesignationResponse
 
@@ -35,7 +36,10 @@ async def get_designations_by_date(
 
 
 @router.post(
-    "/designations", status_code=HTTPStatus.CREATED, response_model=DesignationBase
+    "/designations",
+    status_code=HTTPStatus.CREATED,
+    response_model=DesignationBase,
+    dependencies=[Depends(require_current_user)],
 )
 async def create_designation(
     designation: DesignationBase, session: Annotated[AsyncSession, Depends(get_db)]

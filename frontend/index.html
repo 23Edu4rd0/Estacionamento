@@ -3,76 +3,74 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Estacionamento - Escala de Trabalho</title>
+<title>Estacionamento · Escala de Trabalho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="login-screen" class="screen">
-  <form id="login-form" class="card login-card">
-    <h1>Entrar</h1>
-    <label>E-mail
-      <input type="email" id="login-email" required autocomplete="username" />
-    </label>
-    <label>Senha
-      <input type="password" id="login-password" required autocomplete="current-password" />
-    </label>
-    <p id="login-error" class="error-msg" hidden></p>
-    <button type="submit">Entrar</button>
-  </form>
-</div>
-
-<div id="app-screen" class="screen" hidden>
-  <header class="topbar">
-    <h1>Escala de Trabalho</h1>
-    <div class="topbar-actions">
-      <span id="user-email"></span>
-      <button id="logout-btn" class="btn-secondary">Sair</button>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">P</span>
+    <div>
+      <strong>Estacionamento</strong>
+      <span class="brand-sub">Escala de trabalho</span>
     </div>
-  </header>
+  </div>
+  <div class="topbar-actions">
+    <span id="admin-badge" class="admin-badge" hidden>Modo admin</span>
+    <button id="admin-toggle-btn" class="btn-ghost">Entrar como admin</button>
+    <button id="logout-btn" class="btn-ghost" hidden>Sair</button>
+  </div>
+</header>
 
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="designacao">Designação</button>
-    <button class="tab-btn" data-tab="trabalhadores">Trabalhadores</button>
-    <button class="tab-btn" data-tab="setores">Setores</button>
-  </nav>
+<nav class="tabs" id="tabs-nav">
+  <button class="tab-btn active" data-tab="designacao">Escala</button>
+  <button class="tab-btn" data-tab="trabalhadores">Trabalhadores</button>
+  <button class="tab-btn" data-tab="setores">Setores</button>
+</nav>
 
-  <main>
-    <section id="tab-designacao" class="tab-panel active">
-      <form id="designation-form" class="card">
-        <h2>Informar quem trabalha</h2>
+<main>
+  <section id="tab-designacao" class="tab-panel active">
+    <form id="designation-form" class="card admin-only" hidden>
+      <h2>Informar quem trabalha</h2>
 
-        <label>Trabalhador
-          <select id="worker-select" required>
-            <option value="" disabled selected>Selecione um trabalhador</option>
-          </select>
+      <label>Trabalhador
+        <select id="worker-select" required>
+          <option value="" disabled selected>Selecione um trabalhador</option>
+        </select>
+      </label>
+
+      <label>Setor
+        <select id="sector-select">
+          <option value="">Sem setor</option>
+        </select>
+      </label>
+
+      <div class="field-row">
+        <label>Início
+          <input type="time" id="shift-start" required />
         </label>
-
-        <label>Setor
-          <select id="sector-select">
-            <option value="">Sem setor</option>
-          </select>
+        <label>Fim
+          <input type="time" id="shift-end" required />
         </label>
+      </div>
 
-        <div class="field-row">
-          <label>Início
-            <input type="time" id="shift-start" required />
-          </label>
-          <label>Fim
-            <input type="time" id="shift-end" required />
-          </label>
-        </div>
+      <label>Data
+        <input type="date" id="event-date" required />
+      </label>
 
-        <label>Data
-          <input type="date" id="event-date" required />
-        </label>
+      <p id="designation-msg" class="msg" hidden></p>
+      <button type="submit">Salvar designação</button>
+    </form>
 
-        <p id="designation-msg" class="msg" hidden></p>
-        <button type="submit">Salvar designação</button>
-      </form>
-
-      <div class="card">
+    <div class="card wide">
+      <div class="card-head">
         <h2>Designações</h2>
+        <span id="designations-empty" class="empty-hint" hidden>Nenhuma designação cadastrada ainda.</span>
+      </div>
+      <div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr><th>Trabalhador</th><th>Setor</th><th>Data</th><th>Início</th><th>Fim</th></tr>
@@ -80,56 +78,84 @@
           <tbody id="designations-body"></tbody>
         </table>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="tab-trabalhadores" class="tab-panel">
-      <form id="worker-form" class="card">
-        <h2>Adicionar trabalhador</h2>
-        <label>Nome
-          <input type="text" id="worker-name" required />
-        </label>
-        <label>Telefone
-          <input type="text" id="worker-phone" placeholder="(00) 00000-0000" />
-        </label>
-        <label>Congregação
-          <input type="text" id="worker-congregation" required />
-        </label>
-        <p id="worker-msg" class="msg" hidden></p>
-        <button type="submit">Adicionar</button>
-      </form>
+  <section id="tab-trabalhadores" class="tab-panel">
+    <form id="worker-form" class="card admin-only" hidden>
+      <h2>Adicionar trabalhador</h2>
+      <label>Nome
+        <input type="text" id="worker-name" required />
+      </label>
+      <label>Telefone
+        <input type="text" id="worker-phone" placeholder="(00) 00000-0000" />
+      </label>
+      <label>Congregação
+        <input type="text" id="worker-congregation" required />
+      </label>
+      <p id="worker-msg" class="msg" hidden></p>
+      <button type="submit">Adicionar</button>
+    </form>
 
-      <div class="card">
+    <div class="card wide">
+      <div class="card-head">
         <h2>Trabalhadores cadastrados</h2>
+        <span id="workers-empty" class="empty-hint" hidden>Nenhum trabalhador cadastrado ainda.</span>
+      </div>
+      <div class="table-scroll">
         <table class="data-table">
           <thead>
-            <tr><th>Nome</th><th>Telefone</th><th>Congregação</th><th></th></tr>
+            <tr><th>Nome</th><th>Telefone</th><th>Congregação</th><th class="admin-only-col" hidden></th></tr>
           </thead>
           <tbody id="workers-body"></tbody>
         </table>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="tab-setores" class="tab-panel">
-      <form id="sector-form" class="card">
-        <h2>Adicionar setor</h2>
-        <label>Nome do setor
-          <input type="text" id="sector-name" required />
-        </label>
-        <p id="sector-msg" class="msg" hidden></p>
-        <button type="submit">Adicionar</button>
-      </form>
+  <section id="tab-setores" class="tab-panel">
+    <form id="sector-form" class="card admin-only" hidden>
+      <h2>Adicionar setor</h2>
+      <label>Nome do setor
+        <input type="text" id="sector-name" required />
+      </label>
+      <p id="sector-msg" class="msg" hidden></p>
+      <button type="submit">Adicionar</button>
+    </form>
 
-      <div class="card">
+    <div class="card wide">
+      <div class="card-head">
         <h2>Setores cadastrados</h2>
+        <span id="sectors-empty" class="empty-hint" hidden>Nenhum setor cadastrado ainda.</span>
+      </div>
+      <div class="table-scroll">
         <table class="data-table">
           <thead>
-            <tr><th>Setor</th><th></th></tr>
+            <tr><th>Setor</th><th class="admin-only-col" hidden></th></tr>
           </thead>
           <tbody id="sectors-body"></tbody>
         </table>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
+</main>
+
+<div id="admin-modal" class="modal-backdrop" hidden>
+  <form id="login-form" class="card modal-card">
+    <h1>Acesso administrador</h1>
+    <p class="modal-sub">Qualquer pessoa pode ver a escala. Só administradores podem editar.</p>
+    <label>E-mail
+      <input type="email" id="login-email" required autocomplete="username" />
+    </label>
+    <label>Senha
+      <input type="password" id="login-password" required autocomplete="current-password" />
+    </label>
+    <p id="login-error" class="error-msg" hidden></p>
+    <div class="modal-actions">
+      <button type="button" id="modal-cancel-btn" class="btn-ghost">Cancelar</button>
+      <button type="submit">Entrar</button>
+    </div>
+  </form>
 </div>
 
 <script src="app.js"></script>
