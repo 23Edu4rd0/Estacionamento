@@ -2,12 +2,20 @@ const API_BASE = "/api/v1";
 
 const state = {
   token: localStorage.getItem("token") || null,
-  userEmail: localStorage.getItem("userEmail") || "",
   workers: [],
   sectors: [],
+  designations: [],
+  selectedDate: todayStr(),
 };
 
-const isAdmin = () => Boolean(state.token);
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function isAdmin() {
+  return Boolean(state.token);
+}
 
 async function api(path, options = {}) {
   const headers = options.headers ? { ...options.headers } : {};
@@ -19,13 +27,8 @@ async function api(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (response.status === 401) {
-    const wasAdmin = isAdmin();
     clearSession();
-    throw new Error(
-      wasAdmin
-        ? "Sessão de administrador expirada. Entre novamente."
-        : "É preciso estar logado como administrador para fazer isso."
-    );
+    throw new Error("Sessão de administrador expirada.");
   }
 
   if (!response.ok) {
@@ -47,30 +50,18 @@ function showMsg(el, text, type) {
   el.className = `msg ${type}`;
 }
 
-function clearSession() {
-  state.token = null;
-  state.userEmail = "";
-  localStorage.removeItem("token");
-  localStorage.removeItem("userEmail");
-  applyAdminVisibility();
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
 }
 
-function applyAdminVisibility() {
-  const admin = isAdmin();
+/* ---------- session ---------- */
 
-  document.getElementById("admin-badge").hidden = !admin;
-  document.getElementById("admin-toggle-btn").hidden = admin;
-  document.getElementById("logout-btn").hidden = !admin;
-
-  document.querySelectorAll(".admin-only").forEach((el) => {
-    el.hidden = !admin;
-  });
-  document.querySelectorAll(".admin-only-col").forEach((el) => {
-    el.hidden = !admin;
-  });
-
-  renderWorkers();
-  renderSectors();
+function clearSession() {
+  state.token = null;
+  localStorage.removeItem("token");
+  applyAdminVisibility();
 }
 
 async function login(email, password) {
@@ -84,142 +75,222 @@ async function login(email, password) {
     body,
   });
 
-  if (!response.ok) {
-    throw new Error("E-mail ou senha inválidos.");
-  }
+  if (!response.ok) throw new Error("E-mail ou senha inválidos.");
 
   const data = await response.json();
   state.token = data.access_token;
-  state.userEmail = email;
   localStorage.setItem("token", state.token);
-  localStorage.setItem("userEmail", email);
 }
 
-function openAdminModal() {
-  document.getElementById("admin-modal").hidden = false;
-  document.getElementById("login-error").hidden = true;
-  document.getElementById("login-email").focus();
+function applyAdminVisibility() {
+  const admin = isAdmin();
+  document.getElementById("login-form").hidden = admin;
+  document.getElementById("admin-tools").hidden = !admin;
+  document.getElementById("admin-toggle-btn").hidden = admin;
+  renderDesignations();
 }
 
-function closeAdminModal() {
-  document.getElementById("admin-modal").hidden = true;
-  document.getElementById("login-form").reset();
+/* ---------- clock ---------- */
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").textContent =
+    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-function switchTab(tabName) {
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.tab === tabName);
-  });
-  document.querySelectorAll(".tab-panel").forEach((panel) => {
-    panel.classList.toggle("active", panel.id === `tab-${tabName}`);
-  });
+function nowAsSeconds() {
+  const now = new Date();
+  return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (c) => (
-    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-  ));
+function timeToSeconds(t) {
+  const [h, m, s] = t.split(":").map(Number);
+  return h * 3600 + m * 60 + (s || 0);
 }
 
-function renderWorkers() {
-  const select = document.getElementById("worker-select");
-  select.innerHTML = '<option value="" disabled selected>Selecione um trabalhador</option>';
-  state.workers.forEach((worker) => {
-    const opt = document.createElement("option");
-    opt.value = worker.id;
-    opt.textContent = worker.name;
-    select.appendChild(opt);
-  });
-
-  const body = document.getElementById("workers-body");
-  body.innerHTML = "";
-  state.workers.forEach((worker) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${escapeHtml(worker.name)}</td>
-      <td>${escapeHtml(worker.phone_number || "")}</td>
-      <td>${escapeHtml(worker.congregation)}</td>
-      <td>${isAdmin() ? `<button class="btn-danger" data-delete-worker="${worker.id}">Remover</button>` : ""}</td>
-    `;
-    body.appendChild(row);
-  });
-
-  document.getElementById("workers-empty").hidden = state.workers.length > 0;
-}
-
-function renderSectors() {
-  const select = document.getElementById("sector-select");
-  select.innerHTML = '<option value="">Sem setor</option>';
-  state.sectors.forEach((sector) => {
-    const opt = document.createElement("option");
-    opt.value = sector.id;
-    opt.textContent = sector.sector;
-    select.appendChild(opt);
-  });
-
-  const body = document.getElementById("sectors-body");
-  body.innerHTML = "";
-  state.sectors.forEach((sector) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${escapeHtml(sector.sector)}</td>
-      <td>${isAdmin() ? `<button class="btn-danger" data-delete-sector="${sector.id}">Remover</button>` : ""}</td>
-    `;
-    body.appendChild(row);
-  });
-
-  document.getElementById("sectors-empty").hidden = state.sectors.length > 0;
-}
+/* ---------- data loading ---------- */
 
 async function loadWorkers() {
   state.workers = await api("/workers");
-  renderWorkers();
+  renderWorkerOptions();
+  renderWorkersDrawer();
 }
 
 async function loadSectors() {
   state.sectors = await api("/sectors");
-  renderSectors();
+  renderSectorOptions();
+  renderSectorsDrawer();
 }
 
 async function loadDesignations() {
-  const designations = await api("/designations");
-  const body = document.getElementById("designations-body");
-  body.innerHTML = "";
+  state.designations = await api(`/designations?event_date=${state.selectedDate}`);
+  renderDesignations();
+}
 
-  designations.forEach((designation) => {
-    const worker = state.workers.find((w) => w.id === designation.worker_id);
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${escapeHtml(worker ? worker.name : `#${designation.worker_id}`)}</td>
-      <td>${escapeHtml(designation.sector || "")}</td>
-      <td>${escapeHtml(designation.event_date)}</td>
-      <td>${escapeHtml(designation.shift_start)}</td>
-      <td>${escapeHtml(designation.shift_end)}</td>
-    `;
-    body.appendChild(row);
+/* ---------- schedule rendering ---------- */
+
+function renderDesignations() {
+  const isToday = state.selectedDate === todayStr();
+  const now = nowAsSeconds();
+
+  const current = [];
+  const next = [];
+
+  state.designations.forEach((d) => {
+    if (isToday && timeToSeconds(d.shift_start) <= now && now <= timeToSeconds(d.shift_end)) {
+      current.push(d);
+    } else if (!isToday || timeToSeconds(d.shift_start) > now) {
+      next.push(d);
+    }
   });
 
-  document.getElementById("designations-empty").hidden = designations.length > 0;
+  renderWorkerList("current-list", "current-empty", current);
+  renderWorkerList("next-list", "next-empty", next);
 }
 
-async function init() {
-  applyAdminVisibility();
+function renderWorkerList(listId, emptyId, items) {
+  const list = document.getElementById(listId);
+  list.innerHTML = "";
+
+  items.forEach((d) => {
+    const li = document.createElement("li");
+    li.className = "worker-card";
+    if (d.substituted) li.classList.add("is-substituted");
+    else if (d.confirmed_present) li.classList.add("is-present");
+
+    const statusTag = d.substituted
+      ? '<span class="status-tag substituted">Substituído</span>'
+      : d.confirmed_present
+      ? '<span class="status-tag">Presente</span>'
+      : "";
+
+    const actions = isAdmin()
+      ? `
+        <div class="worker-actions">
+          <button type="button" class="action-btn ${d.confirmed_present ? "active" : ""}" data-toggle="present" data-id="${d.id}">Presente</button>
+          <button type="button" class="action-btn warn ${d.substituted ? "active" : ""}" data-toggle="substituted" data-id="${d.id}">Substituído</button>
+        </div>
+      `
+      : "";
+
+    li.innerHTML = `
+      <div class="worker-info">
+        <div class="worker-name">${escapeHtml(d.worker_name)} ${statusTag}</div>
+        <div class="worker-meta">${escapeHtml(d.shift_start.slice(0, 5))}–${escapeHtml(d.shift_end.slice(0, 5))}${d.sector ? " · " + escapeHtml(d.sector) : ""}</div>
+      </div>
+      ${actions}
+    `;
+    list.appendChild(li);
+  });
+
+  document.getElementById(emptyId).hidden = items.length > 0;
+}
+
+document.addEventListener("click", async (e) => {
+  const toggle = e.target.dataset.toggle;
+  if (!toggle) return;
+
+  const id = e.target.dataset.id;
+  const designation = state.designations.find((d) => String(d.id) === id);
+  if (!designation) return;
+
+  const field = toggle === "present" ? "confirmed_present" : "substituted";
+  const payload = { [field]: !designation[field] };
+
   try {
-    await Promise.all([loadWorkers(), loadSectors()]);
-    await loadDesignations();
+    const updated = await api(`/designations/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    const idx = state.designations.findIndex((d) => d.id === updated.id);
+    state.designations[idx] = updated;
+    renderDesignations();
   } catch (err) {
-    console.error(err);
+    alert(err.message);
   }
-}
-
-document.getElementById("admin-toggle-btn").addEventListener("click", openAdminModal);
-document.getElementById("modal-cancel-btn").addEventListener("click", closeAdminModal);
-document.getElementById("admin-modal").addEventListener("click", (e) => {
-  if (e.target.id === "admin-modal") closeAdminModal();
 });
 
-document.getElementById("logout-btn").addEventListener("click", () => {
-  clearSession();
+/* ---------- admin drawers: workers ---------- */
+
+function renderWorkerOptions() {
+  const select = document.getElementById("worker-select");
+  select.innerHTML = '<option value="" disabled selected>Trabalhador</option>';
+  state.workers.forEach((w) => {
+    const opt = document.createElement("option");
+    opt.value = w.id;
+    opt.textContent = w.name;
+    select.appendChild(opt);
+  });
+}
+
+function renderWorkersDrawer() {
+  const list = document.getElementById("workers-list");
+  list.innerHTML = "";
+  state.workers.forEach((w) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${escapeHtml(w.name)} — ${escapeHtml(w.congregation)}</span>
+      <button type="button" class="btn-remove" data-delete-worker="${w.id}">Remover</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function renderSectorOptions() {
+  const select = document.getElementById("sector-select");
+  select.innerHTML = '<option value="">Sem setor</option>';
+  state.sectors.forEach((s) => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.sector;
+    select.appendChild(opt);
+  });
+}
+
+function renderSectorsDrawer() {
+  const list = document.getElementById("sectors-list");
+  list.innerHTML = "";
+  state.sectors.forEach((s) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${escapeHtml(s.sector)}</span>
+      <button type="button" class="btn-remove" data-delete-sector="${s.id}">Remover</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+/* ---------- drawer open/close ---------- */
+
+function openDrawer(section) {
+  document.getElementById("drawer-backdrop").hidden = false;
+  document.querySelectorAll(".drawer-section").forEach((el) => (el.hidden = true));
+  document.getElementById(`drawer-${section}`).hidden = false;
+
+  const titles = {
+    workers: "Trabalhadores",
+    sectors: "Setores",
+    "new-designation": "Nova designação",
+  };
+  document.getElementById("drawer-title").textContent = titles[section];
+}
+
+function closeDrawer() {
+  document.getElementById("drawer-backdrop").hidden = true;
+}
+
+/* ---------- event wiring ---------- */
+
+document.getElementById("date-picker").value = state.selectedDate;
+document.getElementById("date-picker").addEventListener("change", async (e) => {
+  state.selectedDate = e.target.value || todayStr();
+  await loadDesignations();
+});
+
+document.getElementById("admin-toggle-btn").addEventListener("click", () => {
+  document.getElementById("admin-panel").hidden = false;
+  document.getElementById("admin-toggle-btn").hidden = true;
+  document.getElementById("login-email").focus();
 });
 
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -231,43 +302,26 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
   try {
     await login(email, password);
-    closeAdminModal();
+    e.target.reset();
     applyAdminVisibility();
   } catch (err) {
     showMsg(errorEl, err.message, "error");
   }
 });
 
-document.querySelectorAll(".tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+document.getElementById("logout-btn").addEventListener("click", () => {
+  clearSession();
+  document.getElementById("admin-panel").hidden = true;
+  document.getElementById("admin-toggle-btn").hidden = false;
+  closeDrawer();
 });
 
-document.getElementById("designation-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const msgEl = document.getElementById("designation-msg");
-  const workerId = document.getElementById("worker-select").value;
-  const sectorId = document.getElementById("sector-select").value;
-  const sector = sectorId
-    ? state.sectors.find((s) => String(s.id) === sectorId)?.sector || ""
-    : "";
-
-  const payload = {
-    worker_id: Number(workerId),
-    event_date: document.getElementById("event-date").value,
-    shift_start: document.getElementById("shift-start").value,
-    shift_end: document.getElementById("shift-end").value,
-    sector,
-  };
-
-  try {
-    await api("/designations", { method: "POST", body: JSON.stringify(payload) });
-    showMsg(msgEl, "Designação salva com sucesso.", "success");
-    e.target.reset();
-    await loadDesignations();
-  } catch (err) {
-    showMsg(msgEl, err.message, "error");
-    applyAdminVisibility();
-  }
+document.querySelectorAll("[data-open]").forEach((btn) => {
+  btn.addEventListener("click", () => openDrawer(btn.dataset.open));
+});
+document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+document.getElementById("drawer-backdrop").addEventListener("click", (e) => {
+  if (e.target.id === "drawer-backdrop") closeDrawer();
 });
 
 document.getElementById("worker-form").addEventListener("submit", async (e) => {
@@ -286,11 +340,10 @@ document.getElementById("worker-form").addEventListener("submit", async (e) => {
     await loadWorkers();
   } catch (err) {
     showMsg(msgEl, err.message, "error");
-    applyAdminVisibility();
   }
 });
 
-document.getElementById("workers-body").addEventListener("click", async (e) => {
+document.getElementById("workers-list").addEventListener("click", async (e) => {
   const id = e.target.dataset.deleteWorker;
   if (!id) return;
   if (!confirm("Remover este trabalhador?")) return;
@@ -300,7 +353,6 @@ document.getElementById("workers-body").addEventListener("click", async (e) => {
     await loadWorkers();
   } catch (err) {
     alert(err.message);
-    applyAdminVisibility();
   }
 });
 
@@ -316,11 +368,10 @@ document.getElementById("sector-form").addEventListener("submit", async (e) => {
     await loadSectors();
   } catch (err) {
     showMsg(msgEl, err.message, "error");
-    applyAdminVisibility();
   }
 });
 
-document.getElementById("sectors-body").addEventListener("click", async (e) => {
+document.getElementById("sectors-list").addEventListener("click", async (e) => {
   const id = e.target.dataset.deleteSector;
   if (!id) return;
   if (!confirm("Remover este setor?")) return;
@@ -330,8 +381,50 @@ document.getElementById("sectors-body").addEventListener("click", async (e) => {
     await loadSectors();
   } catch (err) {
     alert(err.message);
-    applyAdminVisibility();
   }
 });
+
+document.getElementById("designation-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById("designation-msg");
+  const sectorId = document.getElementById("sector-select").value;
+
+  const payload = {
+    worker_id: Number(document.getElementById("worker-select").value),
+    event_date: document.getElementById("event-date").value,
+    shift_start: document.getElementById("shift-start").value,
+    shift_end: document.getElementById("shift-end").value,
+    sector_id: sectorId ? Number(sectorId) : null,
+  };
+
+  try {
+    await api("/designations", { method: "POST", body: JSON.stringify(payload) });
+    showMsg(msgEl, "Designação salva.", "success");
+    e.target.reset();
+    await loadDesignations();
+  } catch (err) {
+    showMsg(msgEl, err.message, "error");
+  }
+});
+
+/* ---------- init ---------- */
+
+async function init() {
+  document.getElementById("event-date").value = state.selectedDate;
+  applyAdminVisibility();
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  try {
+    await Promise.all([loadWorkers(), loadSectors()]);
+    await loadDesignations();
+  } catch (err) {
+    console.error(err);
+  }
+
+  setInterval(() => {
+    if (state.selectedDate === todayStr()) renderDesignations();
+  }, 30000);
+}
 
 init();
