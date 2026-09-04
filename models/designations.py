@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import ForeignKey, false, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
@@ -15,7 +15,9 @@ class Designation(Base):
     event_date: Mapped[date] = mapped_column(nullable=False)
     shift_start: Mapped[time] = mapped_column(nullable=False)
     shift_end: Mapped[time] = mapped_column(nullable=False)
-    sector_id: Mapped[int] = mapped_column(ForeignKey("sectors.id"))
+    sector_id: Mapped[int] = mapped_column(ForeignKey("sectors.id"), nullable=True)
+    confirmed_present: Mapped[bool] = mapped_column(default=False, server_default=false())
+    substituted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
