@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Estacionamento - Escala de Trabalho</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="login-screen" class="screen">
+  <form id="login-form" class="card login-card">
+    <h1>Entrar</h1>
+    <label>E-mail
+      <input type="email" id="login-email" required autocomplete="username" />
+    </label>
+    <label>Senha
+      <input type="password" id="login-password" required autocomplete="current-password" />
+    </label>
+    <p id="login-error" class="error-msg" hidden></p>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+
+<div id="app-screen" class="screen" hidden>
+  <header class="topbar">
+    <h1>Escala de Trabalho</h1>
+    <div class="topbar-actions">
+      <span id="user-email"></span>
+      <button id="logout-btn" class="btn-secondary">Sair</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="designacao">Designação</button>
+    <button class="tab-btn" data-tab="trabalhadores">Trabalhadores</button>
+    <button class="tab-btn" data-tab="setores">Setores</button>
+  </nav>
+
+  <main>
+    <section id="tab-designacao" class="tab-panel active">
+      <form id="designation-form" class="card">
+        <h2>Informar quem trabalha</h2>
+
+        <label>Trabalhador
+          <select id="worker-select" required>
+            <option value="" disabled selected>Selecione um trabalhador</option>
+          </select>
+        </label>
+
+        <label>Setor
+          <select id="sector-select">
+            <option value="">Sem setor</option>
+          </select>
+        </label>
+
+        <div class="field-row">
+          <label>Início
+            <input type="time" id="shift-start" required />
+          </label>
+          <label>Fim
+            <input type="time" id="shift-end" required />
+          </label>
+        </div>
+
+        <label>Data
+          <input type="date" id="event-date" required />
+        </label>
+
+        <p id="designation-msg" class="msg" hidden></p>
+        <button type="submit">Salvar designação</button>
+      </form>
+
+      <div class="card">
+        <h2>Designações</h2>
+        <table class="data-table">
+          <thead>
+            <tr><th>Trabalhador</th><th>Setor</th><th>Data</th><th>Início</th><th>Fim</th></tr>
+          </thead>
+          <tbody id="designations-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-trabalhadores" class="tab-panel">
+      <form id="worker-form" class="card">
+        <h2>Adicionar trabalhador</h2>
+        <label>Nome
+          <input type="text" id="worker-name" required />
+        </label>
+        <label>Telefone
+          <input type="text" id="worker-phone" placeholder="(00) 00000-0000" />
+        </label>
+        <label>Congregação
+          <input type="text" id="worker-congregation" required />
+        </label>
+        <p id="worker-msg" class="msg" hidden></p>
+        <button type="submit">Adicionar</button>
+      </form>
+
+      <div class="card">
+        <h2>Trabalhadores cadastrados</h2>
+        <table class="data-table">
+          <thead>
+            <tr><th>Nome</th><th>Telefone</th><th>Congregação</th><th></th></tr>
+          </thead>
+          <tbody id="workers-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-setores" class="tab-panel">
+      <form id="sector-form" class="card">
+        <h2>Adicionar setor</h2>
+        <label>Nome do setor
+          <input type="text" id="sector-name" required />
+        </label>
+        <p id="sector-msg" class="msg" hidden></p>
+        <button type="submit">Adicionar</button>
+      </form>
+
+      <div class="card">
+        <h2>Setores cadastrados</h2>
+        <table class="data-table">
+          <thead>
+            <tr><th>Setor</th><th></th></tr>
+          </thead>
+          <tbody id="sectors-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
