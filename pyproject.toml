@@ -21,6 +21,17 @@ dependencies = [
 [tool.poetry]
 package-mode = false
 
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+include = ["api*", "core*", "models*", "repositories*"]
+namespaces = true
+
 [dependency-groups]
 dev = [
     "ruff (>=0.15.11,<0.16.0)",
